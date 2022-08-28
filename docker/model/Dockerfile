@@ -25,7 +25,7 @@ RUN pip install -r requirements.txt
 
 RUN mkdir -p /opt/app
 WORKDIR /opt/app
-COPY app .
+#COPY app .
 
 EXPOSE 8080
 ENTRYPOINT ["/opt/app/app.sh"]

@@ -5,7 +5,13 @@ cat >&2 <<EOS
 コンテナ起動コマンド
 
 [usage]
- $0 [options]
+ $0 <MODE> [options]
+
+[args]
+ <MODE>:
+   コンテナの実行モード
+   train: 学習モードで実行
+   serve: 推論モードで実行
 
 [options]
  -h | --help:
@@ -42,20 +48,27 @@ while [ "$#" != 0 ]; do
   shift
 done
 
-[ "${#args[@]}" != 0 ] && usage
+[ "${#args[@]}" != 1 ] && usage
 [ -z "$ENV_PATH" ] && error "-e | --env で環境変数ファイルを指定してください"
 [ -r "$ENV_PATH" -a -f "$ENV_PATH" ] || error "環境変数ファイルを読み込めません: $ENV_PATH"
+
+MODE="${args[0]}"
+[ "$MODE" != "train" -a "$MODE" != "serve" ] && error "<MODE>には train , serve いずれかを指定してください (MODE=$MODE)"
 
 env_tmp="$(mktemp)"
 cat "$ENV_PATH" > "$env_tmp"
 
-trap "rm -f $env_tmp" EXIT
+trap "echo '[trap] rm -f $env_tmp' ; rm -f $env_tmp" EXIT
 
-invoke docker run $OPTIONS \
+docker run $OPTIONS \
+  -ti \
   --rm \
   --network host \
   --env-file "$env_tmp" \
+  --name ${APP_NAME}_${MODE} \
+  -v "$PROJECT_ROOT/data/training:/opt/ml/input/data/training" \
+  -v "$PROJECT_ROOT/data/tmp:/opt/tmp" \
+  -v "$PROJECT_ROOT/data/model:/opt/ml/model" \
+  -v "$PROJECT_ROOT/app:/opt/app" \
   "${APP_NAME}/model:latest" \
-  server
-
-rm $env_tmp
+  $MODE
