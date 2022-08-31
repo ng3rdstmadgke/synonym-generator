@@ -19,13 +19,12 @@ RUN git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd.git && \
   ./bin/install-mecab-ipadic-neologd -y -n && \
   echo `mecab-config --dicdir`"/mecab-ipadic-neologd"
 
-
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 RUN mkdir -p /opt/app
 WORKDIR /opt/app
-#COPY app .
+COPY app .
 
 EXPOSE 8080
 ENTRYPOINT ["/opt/app/app.sh"]
