@@ -22,7 +22,7 @@ RUN git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd.git && \
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-RUN mkdir -p /opt/app
+RUN mkdir -p /opt/app /opt/tmp
 WORKDIR /opt/app
 COPY app .
 

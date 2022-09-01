@@ -14,7 +14,7 @@ def logging_error_exception(e: Exception):
     logger.error("{}\n{}".format(str(e), traceback.format_exc()))
 
 class Environment(BaseSettings):
-    data_file: str = "/opt/ml/input/data/training/wiki_100.txt"
+    data_file: str = "/opt/ml/input/data/train/wiki.txt"
     model_file: str = "/opt/ml/model/model.bin"
     wakati_file: str = "/opt/tmp/wakati.txt"
 

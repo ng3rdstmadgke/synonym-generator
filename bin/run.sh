@@ -66,9 +66,9 @@ docker run $OPTIONS \
   --network host \
   --env-file "$env_tmp" \
   --name ${APP_NAME}_${MODE} \
-  -v "$PROJECT_ROOT/data/training:/opt/ml/input/data/training" \
   -v "$PROJECT_ROOT/data/tmp:/opt/tmp" \
-  -v "$PROJECT_ROOT/data/model:/opt/ml/model" \
+  -v "$PROJECT_ROOT/data/ml/input/data/train:/opt/ml/input/data/train" \
+  -v "$PROJECT_ROOT/data/ml/model:/opt/ml/model" \
   -v "$PROJECT_ROOT/app:/opt/app" \
   "${APP_NAME}/model:latest" \
   $MODE
