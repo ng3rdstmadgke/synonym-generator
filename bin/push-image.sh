@@ -25,13 +25,13 @@ cd "$PROJECT_ROOT"
 source "${SCRIPT_DIR}/lib/utils.sh"
 
 AWS_PROFILE="default"
-AWS_REGION=ap-northeast-1
+AWS_REGION="ap-northeast-1"
 args=()
 while [ "$#" != 0 ]; do
   case $1 in
     -h | --help ) usage;;
-    --profile   ) AWS_PROFILE="$1";;
-    --region    ) AWS_REGION="$1";;
+    --profile   ) shift; AWS_PROFILE="$1";;
+    --region    ) shift; AWS_REGION="$1";;
     -* | --*    ) error "$1 : 不正なオプションです" ;;
     *           ) args+=("$1");;
   esac
@@ -42,7 +42,7 @@ done
 
 set -e
 
-AWS_ACCOUNT=$(aws sts get-caller-identity --output json --profile ${AWS_PROFILE} | jq -r ".Account")
+AWS_ACCOUNT=$(aws sts get-caller-identity --profile ${AWS_PROFILE} --output text --query "Account")
 info "aws ecr get-login-password --region $AWS_REGION --profile ${AWS_PROFILE} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 aws ecr get-login-password --region $AWS_REGION --profile ${AWS_PROFILE} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
 

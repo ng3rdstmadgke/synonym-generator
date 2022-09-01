@@ -19,7 +19,7 @@ COPY --from=0 /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd /usr/lib/
 
 RUN apt update
 
-RUN apt install -y locales -y && \
+RUN apt install -y locales && \
     echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && \
     locale-gen && \
     update-locale LANG=en_US.UTF-8
@@ -29,7 +29,7 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 RUN apt install -y mecab bash
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 RUN mkdir -p /opt/app /opt/tmp
 WORKDIR /opt/app
