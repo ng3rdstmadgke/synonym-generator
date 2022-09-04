@@ -5,10 +5,11 @@ cat >&2 <<EOS
 dockerイメージをbuildしてpushするコマンド
 
 [usage]
- $0 <S3_BUCKET> [options]
+ $0 <S3_BUCKET> <FILE_PATH> [options]
 
 [args]
  S3_BUCKET: s3バケット名
+ FILE_PATH: アップロードするファイルのパス
 
 [options]
  -h | --help:
@@ -40,15 +41,15 @@ while [ "$#" != 0 ]; do
   shift
 done
 
-[ "${#args[@]}" != 1 ] && usage
+[ "${#args[@]}" != 2 ] && usage
+
 S3_BUCKET=${args[0]}
+LOCAL_PATH=${args[1]}
+
+[ -r "$LOCAL_PATH" -a -f "$LOCAL_PATH" ] || error "FILE_PATH: $FILE_PATH が見つかりません。"
 
 
 set -e
 
-#LOCAL_PATH="${PROJECT_ROOT}/data/ml/input/data/train/"
-#S3_PATH="s3://${S3_BUCKET}/${APP_NAME}/data/"
-#invoke aws s3 sync --delete $LOCAL_PATH $S3_PATH
-LOCAL_PATH="${PROJECT_ROOT}/data/ml/input/data/train/wiki.txt"
 S3_PATH="s3://${S3_BUCKET}/${APP_NAME}/data/wiki.txt"
 invoke aws s3 cp $LOCAL_PATH $S3_PATH

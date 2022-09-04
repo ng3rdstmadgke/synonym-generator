@@ -1,3 +1,6 @@
+# Synonym Generator
+類義語っぽいものを自動生成するアプリです。
+
 # QuickStart
 
 ## ローカルで動かしてみる

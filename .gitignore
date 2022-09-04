@@ -17,7 +17,7 @@ data/ml/input/config/*
 
 data/ml/input/data/train/*
 !data/ml/input/data/train/.gitkeep
-!data/ml/input/data/train/wiki.txt
+!data/ml/input/data/train/wiki_100.txt
 
 data/ml/input/data/test/*
 !data/ml/input/data/test/.gitkeep
