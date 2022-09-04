@@ -50,6 +50,8 @@ echo $APP_NAME
 # s3バケット作成
 RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 10 | head -n1)
 S3_BUCKET_NAME="synonym-generator-${RANDOM_ID}"
+
+# 控えておいてください
 echo $S3_BUCKET_NAME
 aws --profile default s3 mb "s3://${S3_BUCKET_NAME}"
 
