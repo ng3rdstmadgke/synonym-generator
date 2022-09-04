@@ -43,3 +43,4 @@ done
 set -e
 invoke docker build $OPTIONS --rm -f docker/model/Dockerfile -t "${APP_NAME}/model:latest" .
 invoke docker build $OPTIONS --rm -f docker/tool/Dockerfile -t "${APP_NAME}/tool:latest" .
+invoke docker build $OPTIONS --rm -f docker/sls/Dockerfile -t "${APP_NAME}/sls:latest" .

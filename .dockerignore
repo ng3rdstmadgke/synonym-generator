@@ -1,6 +1,9 @@
 .git/
 .vscode/
 
+# sls
+sls/node_modules/
+
 # api
 __pycache__/
 .venv/

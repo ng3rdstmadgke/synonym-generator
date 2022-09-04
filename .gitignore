@@ -2,6 +2,8 @@ __pycache__/
 .vscode/
 .venv/
 .env
+node_modules/
+
 
 # データ関連
 data/tmp/*

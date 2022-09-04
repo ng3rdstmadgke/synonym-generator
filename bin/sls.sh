@@ -2,10 +2,10 @@
 
 function usage {
 cat >&2 <<EOS
-
+slsコマンドを扱うラッパー
 
 [usage]
- $0 <ENDPOINT_NAME> <KEYWORD> [options]
+ $0 [options]
 
 [options]
  -h | --help:
@@ -14,6 +14,12 @@ cat >&2 <<EOS
    awsのプロファイル名を指定 (default=default)
  --region <AWS_REGION>:
    awsのリージョンを指定 (default=ap-northeast-1)
+
+[example]
+ デプロイ
+  $0 -- deploy --param="s3Bucket=xxxxxxxxxxxxx" --param="imageArn=xxxxxxxxxxxxx.dkr.ecr.ap-northeast-1.amazonaws.com/xxxxxxxxx:tag"
+ 削除
+  $0 -- remove
 EOS
 exit 1
 }
@@ -21,7 +27,6 @@ exit 1
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 PROJECT_ROOT=$(cd $(dirname $0)/..; pwd)
 APP_NAME=$(bash $SCRIPT_DIR/lib/app_name.sh)
-
 
 cd "$PROJECT_ROOT"
 source "${SCRIPT_DIR}/lib/utils.sh"
@@ -34,28 +39,25 @@ while [ "$#" != 0 ]; do
     -h | --help ) usage;;
     --profile   ) shift; AWS_PROFILE="$1";;
     --region    ) shift; AWS_REGION="$1";;
+    --          ) shift; args+=($@); break;; 
     -* | --*    ) error "$1 : 不正なオプションです" ;;
     *           ) args+=("$1");;
   esac
   shift
 done
 
-[ "${#args[@]}" != 2 ] && usage
-ENDPOINT_NAME=${args[0]}
-KEYWORD=${args[1]}
-
 set -e
-
 
 AWS_ACCESS_KEY_ID=$(aws --profile $AWS_PROFILE configure get aws_access_key_id)
 AWS_SECRET_ACCESS_KEY=$(aws --profile $AWS_PROFILE configure get aws_secret_access_key)
 
 invoke docker run \
+  -ti \
   --rm \
   -e AWS_REGION=$AWS_REGION \
   -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-  --name ${APP_NAME}_predict \
-  -v "$PROJECT_ROOT/app:/opt/app" \
-  "${APP_NAME}/tool:latest" \
-  python /opt/app/predict.py $ENDPOINT_NAME $KEYWORD
+  -v ${PROJECT_ROOT}/sls/src:/opt/sls/src \
+  -v ${PROJECT_ROOT}/sls/serverless.yml:/opt/sls/serverless.yml \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  ${APP_NAME}/sls:latest sls ${args[@]} --region $AWS_REGION
