@@ -1,6 +1,7 @@
 service: synonym
 frameworkVersion: '3'
 
+# Serverless Parameters: https://www.serverless.com/framework/docs/guides/parameters
 custom:
   s3Bucket: ${param:s3Bucket}
   imageArn: ${param:imageArn}
@@ -9,12 +10,28 @@ custom:
 provider:
   name: aws
   runtime: python3.8
-  region: us-east-1
+  region: ap-northeast-1
 
+package:
+  patterns:
+    - '!**'
+    - 'src/**'
+
+# Serverless AWS Lambda Functions: https://www.serverless.com/framework/docs/providers/aws/guide/functions/
 functions:
-  hello:
-    handler: src.handler.hello
+  checkEndpoingInService:
+    handler: src.check_endpoint.main.handler
+    role: CheckSageMakerEndpointStatusFunctionRole
+    runtime: python3.8
+    memorySize: 256
+    timeout: 600
+    package:
+      patterns:
+        - '!**'
+        - 'src/__init__.py'
+        - 'src/check_endpoint/**'
 
+# Serverless Step Functions: https://www.serverless.com/plugins/serverless-step-functions
 stepFunctions:
   stateMachines:
     synonymFunc:
@@ -25,41 +42,6 @@ stepFunctions:
         Comment: Synonym Generator
         StartAt: SageMaker CreateTrainingJob
         States:
-          SageMaker CreateEndpoint:
-            End: true
-            Parameters:
-              EndpointConfigName.$: States.Format('Synonym-{}', $$.Execution.Name)
-              EndpointName.$: States.Format('Synonym-{}', $$.Execution.Name)
-            Resource: arn:aws:states:::sagemaker:createEndpoint
-            ResultPath: $.endpoint_result
-            Type: Task
-          SageMaker CreateEndpointConfig:
-            Next: SageMaker CreateEndpoint
-            Parameters:
-              EndpointConfigName.$: States.Format('Synonym-{}', $$.Execution.Name)
-              ProductionVariants:
-              - ModelName.$: States.Format('Synonym-{}', $$.Execution.Name)
-                ServerlessConfig:
-                  MaxConcurrency: 20
-                  MemorySizeInMB: 3072
-                VariantName.$: States.Format('Synonym-{}', $$.Execution.Name)
-            Resource: arn:aws:states:::sagemaker:createEndpointConfig
-            ResultPath: $.endpoint_config_result
-            Type: Task
-          SageMaker CreateModel:
-            Next: SageMaker CreateEndpointConfig
-            Parameters:
-              EnableNetworkIsolation: false
-              ExecutionRoleArn:
-                Fn::GetAtt: ["SageMakerExecutionRole", "Arn"]
-              ModelName.$: States.Format('Synonym-{}', $$.Execution.Name)
-              PrimaryContainer:
-                Image: ${self:custom.imageArn}
-                Mode: SingleModel
-                ModelDataUrl.$: $.training_result.ModelArtifacts.S3ModelArtifacts
-            Resource: arn:aws:states:::sagemaker:createModel
-            ResultPath: $.model_result
-            Type: Task
           SageMaker CreateTrainingJob:
             Next: SageMaker CreateModel
             Parameters:
@@ -93,10 +75,64 @@ stepFunctions:
                 Fn::GetAtt: ["SageMakerExecutionRole", "Arn"]
               StoppingCondition:
                 MaxRuntimeInSeconds: 3600
-              TrainingJobName.$: States.Format('Synonym-{}', $$.Execution.Name)
+              TrainingJobName.$: States.Format('synonym-{}', $$.Execution.Name)
             Resource: arn:aws:states:::sagemaker:createTrainingJob.sync
             ResultPath: $.training_result
             Type: Task
+          SageMaker CreateModel:
+            Next: SageMaker CreateEndpointConfig
+            Parameters:
+              EnableNetworkIsolation: false
+              ExecutionRoleArn:
+                Fn::GetAtt: ["SageMakerExecutionRole", "Arn"]
+              ModelName.$: States.Format('synonym-{}', $$.Execution.Name)
+              PrimaryContainer:
+                Image: ${self:custom.imageArn}
+                Mode: SingleModel
+                ModelDataUrl.$: $.training_result.ModelArtifacts.S3ModelArtifacts
+            Resource: arn:aws:states:::sagemaker:createModel
+            ResultPath: $.model_result
+            Type: Task
+          SageMaker CreateEndpointConfig:
+            Next: SageMaker CreateEndpoint
+            Parameters:
+              EndpointConfigName.$: States.Format('synonym-{}', $$.Execution.Name)
+              ProductionVariants:
+              - ModelName.$: States.Format('synonym-{}', $$.Execution.Name)
+                ServerlessConfig:
+                  MaxConcurrency: 20
+                  MemorySizeInMB: 3072
+                VariantName.$: States.Format('synonym-{}', $$.Execution.Name)
+            Resource: arn:aws:states:::sagemaker:createEndpointConfig
+            ResultPath: $.endpoint_config_result
+            Type: Task
+          SageMaker CreateEndpoint:
+            Next: Check Endpoint Status InService
+            Parameters:
+              EndpointConfigName.$: States.Format('synonym-{}', $$.Execution.Name)
+              EndpointName.$: States.Format('synonym-{}', $$.Execution.Name)
+            Resource: arn:aws:states:::sagemaker:createEndpoint
+            ResultPath: $.endpoint_result
+            Type: Task
+          Check Endpoint Status InService:
+            End: true
+            HeartbeatSeconds: 60
+            Parameters:
+              FunctionName:
+                Fn::GetAtt: [checkEndpoingInService, Arn] 
+              Payload:
+                EndpointName.$: States.Format('synonym-{}', $$.Execution.Name)
+            Resource: arn:aws:states:::lambda:invoke
+            ResultPath: $.check_endpoint_status_result
+            Retry:
+            - BackoffRate: 1
+              ErrorEquals:
+              - States.ALL
+              IntervalSeconds: 10
+              MaxAttempts: 2
+            TimeoutSeconds: 600
+            Type: Task
+
 
 
 resources:
@@ -154,6 +190,22 @@ resources:
                 Resource:
                 - Fn::GetAtt: ["SageMakerExecutionRole", "Arn"]
 
+    CheckSageMakerEndpointStatusFunctionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: CheckSageMakerEndpointStatusFunctionRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - sts:AssumeRole
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole 
+          - arn:aws:iam::aws:policy/PowerUserAccess
 
 plugins:
   - serverless-step-functions
