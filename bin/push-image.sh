@@ -5,7 +5,10 @@ cat >&2 <<EOS
 dockerイメージをbuildしてpushするコマンド
 
 [usage]
- $0 [options]
+ $0 <ECR_NAME> [options]
+
+[args]
+ ECR_NAME: リポジトリ名 (ex. synonym/model)
 
 [options]
  -h | --help:
@@ -38,15 +41,16 @@ while [ "$#" != 0 ]; do
   shift
 done
 
-[ "${#args[@]}" != 0 ] && usage
+[ "${#args[@]}" != 1 ] && usage
+ECR_NAME=${args[0]}
 
 set -e
 
 AWS_ACCOUNT=$(aws sts get-caller-identity --profile ${AWS_PROFILE} --output text --query "Account")
-info "aws ecr get-login-password --region $AWS_REGION --profile ${AWS_PROFILE} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 aws ecr get-login-password --region $AWS_REGION --profile ${AWS_PROFILE} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-$SCRIPT_DIR/build.sh
+ECR_URI=$(aws ecr describe-repositories --repository-name "${ECR_NAME}" --output text --query 'repositories[0].repositoryUri')
 
-invoke docker tag ${APP_NAME}/model:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP_NAME}/model:latest
-invoke docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP_NAME}/model:latest
+$SCRIPT_DIR/build.sh
+invoke docker tag ${APP_NAME}/model:latest ${ECR_URI}:latest
+invoke docker push ${ECR_URI}:latest

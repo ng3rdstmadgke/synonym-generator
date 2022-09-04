@@ -4,13 +4,13 @@ frameworkVersion: '3'
 # Serverless Parameters: https://www.serverless.com/framework/docs/guides/parameters
 custom:
   s3Bucket: ${param:s3Bucket}
-  imageArn: ${param:imageArn}
-
+  imageUri: ${param:imageUri}
 
 provider:
   name: aws
   runtime: python3.8
   region: ap-northeast-1
+  stage: ${opt:stage, "dev"}
 
 package:
   patterns:
@@ -37,16 +37,17 @@ stepFunctions:
     synonymFunc:
       role: 
         Fn::GetAtt: ["StateMachineRole", "Arn"]
-      name: synonym-generator
+      name: synonym-generator-${self:provider.stage}
       definition:
         Comment: Synonym Generator
         StartAt: SageMaker CreateTrainingJob
         States:
+          # CreateTrainingJob: https://docs.aws.amazon.com/ja_jp/sagemaker/latest/APIReference/API_CreateTrainingJob.html
           SageMaker CreateTrainingJob:
             Next: SageMaker CreateModel
             Parameters:
               AlgorithmSpecification:
-                TrainingImage:  ${self:custom.imageArn}
+                TrainingImage:  ${self:custom.imageUri}:latest
                 TrainingInputMode: File
               EnableInterContainerTrafficEncryption: false
               EnableManagedSpotTraining: false
@@ -74,11 +75,12 @@ stepFunctions:
               RoleArn:
                 Fn::GetAtt: ["SageMakerExecutionRole", "Arn"]
               StoppingCondition:
-                MaxRuntimeInSeconds: 3600
+                MaxRuntimeInSeconds: 18000
               TrainingJobName.$: States.Format('synonym-{}', $$.Execution.Name)
             Resource: arn:aws:states:::sagemaker:createTrainingJob.sync
             ResultPath: $.training_result
             Type: Task
+          # CreateModel: https://docs.aws.amazon.com/ja_jp/sagemaker/latest/APIReference/API_CreateModel.html
           SageMaker CreateModel:
             Next: SageMaker CreateEndpointConfig
             Parameters:
@@ -87,12 +89,13 @@ stepFunctions:
                 Fn::GetAtt: ["SageMakerExecutionRole", "Arn"]
               ModelName.$: States.Format('synonym-{}', $$.Execution.Name)
               PrimaryContainer:
-                Image: ${self:custom.imageArn}
+                Image: ${self:custom.imageUri}:latest
                 Mode: SingleModel
                 ModelDataUrl.$: $.training_result.ModelArtifacts.S3ModelArtifacts
             Resource: arn:aws:states:::sagemaker:createModel
             ResultPath: $.model_result
             Type: Task
+          # CreateEndpointConfig: https://docs.aws.amazon.com/ja_jp/sagemaker/latest/APIReference/API_CreateEndpointConfig.html
           SageMaker CreateEndpointConfig:
             Next: SageMaker CreateEndpoint
             Parameters:
@@ -106,6 +109,7 @@ stepFunctions:
             Resource: arn:aws:states:::sagemaker:createEndpointConfig
             ResultPath: $.endpoint_config_result
             Type: Task
+          # CreateEndpoint: https://docs.aws.amazon.com/ja_jp/sagemaker/latest/APIReference/API_CreateEndpoint.html
           SageMaker CreateEndpoint:
             Next: Check Endpoint Status InService
             Parameters:

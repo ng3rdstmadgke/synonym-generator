@@ -18,11 +18,9 @@ cat >&2 <<EOS
    ヘルプを表示
  -d | --daemon:
    バックグラウンドで起動
- -e | --env <ENV_PATH>:
-   環境変数ファイルを指定(default=.env)
 
 [example]
- $(dirname $0)/run.sh -e .env
+ $(dirname $0)/run.sh -e
 EOS
 exit 1
 }
@@ -35,13 +33,11 @@ APP_NAME=$(bash $SCRIPT_DIR/lib/app_name.sh)
 source "${SCRIPT_DIR}/lib/utils.sh"
 
 OPTIONS=
-ENV_PATH=".env"
 args=()
 while [ "$#" != 0 ]; do
   case $1 in
     -h | --help      ) usage;;
     -d | --daemon    ) shift;OPTIONS="$OPTIONS -d";;
-    -e | --env       ) shift;ENV_PATH="$1";;
     -* | --*         ) error "$1 : 不正なオプションです" ;;
     *                ) args+=("$1");;
   esac
@@ -49,22 +45,15 @@ while [ "$#" != 0 ]; do
 done
 
 [ "${#args[@]}" != 1 ] && usage
-[ -z "$ENV_PATH" ] && error "-e | --env で環境変数ファイルを指定してください"
-[ -r "$ENV_PATH" -a -f "$ENV_PATH" ] || error "環境変数ファイルを読み込めません: $ENV_PATH"
 
 MODE="${args[0]}"
 [ "$MODE" != "train" -a "$MODE" != "serve" ] && error "<MODE>には train , serve いずれかを指定してください (MODE=$MODE)"
 
-env_tmp="$(mktemp)"
-cat "$ENV_PATH" > "$env_tmp"
-
-trap "echo '[trap] rm -f $env_tmp' ; rm -f $env_tmp" EXIT
 
 docker run $OPTIONS \
   -ti \
   --rm \
   --network host \
-  --env-file "$env_tmp" \
   --name ${APP_NAME}_${MODE} \
   -v "$PROJECT_ROOT/data/tmp:/opt/tmp" \
   -v "$PROJECT_ROOT/data/ml/input/data/train:/opt/ml/input/data/train" \
