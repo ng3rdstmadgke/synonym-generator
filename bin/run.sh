@@ -2,7 +2,7 @@
 
 function usage {
 cat >&2 <<EOS
-コンテナ起動コマンド
+学習タスク実行・推論サーバー起動コマンド
 
 [usage]
  $0 <MODE> [options]
@@ -16,11 +16,16 @@ cat >&2 <<EOS
 [options]
  -h | --help:
    ヘルプを表示
- -d | --daemon:
-   バックグラウンドで起動
 
 [example]
- $(dirname $0)/run.sh -e
+ 学習モードで実行。
+ $PROJECT_ROOT/data/ml/input/data/train/wiki.txt が学習対象のファイルとなります
+   cp $PROJECT_ROOT/data/ml/input/data/train/wiki_100.txt $PROJECT_ROOT/data/ml/input/data/train/wiki.txt
+   $0 train
+ 
+ 推論モードで実行。
+   $PROJECT_ROOT/data/ml/model/model.bin がモデルとなります。
+   $0 serve
 EOS
 exit 1
 }
@@ -32,12 +37,10 @@ APP_NAME=$(bash $SCRIPT_DIR/lib/app_name.sh)
 
 source "${SCRIPT_DIR}/lib/utils.sh"
 
-OPTIONS=
 args=()
 while [ "$#" != 0 ]; do
   case $1 in
     -h | --help      ) usage;;
-    -d | --daemon    ) shift;OPTIONS="$OPTIONS -d";;
     -* | --*         ) error "$1 : 不正なオプションです" ;;
     *                ) args+=("$1");;
   esac
@@ -50,7 +53,7 @@ MODE="${args[0]}"
 [ "$MODE" != "train" -a "$MODE" != "serve" ] && error "<MODE>には train , serve いずれかを指定してください (MODE=$MODE)"
 
 
-docker run $OPTIONS \
+docker run \
   -ti \
   --rm \
   --network host \

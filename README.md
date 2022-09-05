@@ -109,3 +109,15 @@ aws --profile default ecr delete-repository --repository-name "${ECR_NAME}" --fo
 # s3バケットの削除
 aws --profile default s3 rb "s3://${S3_BUCKET_NAME}" --force
 ```
+
+
+# ■ TODO
+
+- コンテナをVPC起動に
+- 命名規則をAPP_NAME由来に統一
+- CodePipelineでStepFunctionsを発火
+- S3の学習データ更新でStepFunctionsを発火
+- ALBを利用したデプロイ戦略
+- Lambdaによるテスト
+- 実験アーティファクト管理
+- ハイパーパラメータ設定

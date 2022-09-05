@@ -2,10 +2,16 @@
 
 function usage {
 cat >&2 <<EOS
-
+類義語の推論を行うコマンド
 
 [usage]
  $0 <ENDPOINT_NAME> <KEYWORD> [options]
+
+[args]
+ ENDPOINT_NAME:
+   SageMakerエンドポイント名を指定します。
+ KEYWORD:
+   類義語推論したい単語を指定します。
 
 [options]
  -h | --help:
@@ -58,4 +64,4 @@ invoke docker run \
   --name ${APP_NAME}_predict \
   -v "$PROJECT_ROOT/app:/opt/app" \
   "${APP_NAME}/tool:latest" \
-  python /opt/app/predict.py $ENDPOINT_NAME $KEYWORD
+  python /opt/app/predict.py "$ENDPOINT_NAME" "$KEYWORD"

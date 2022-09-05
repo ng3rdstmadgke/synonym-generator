@@ -5,7 +5,11 @@ cat >&2 <<EOS
 slsコマンドを扱うラッパー
 
 [usage]
- $0 [options]
+ $0 [options] -- <SLS_ARGS> ...
+
+[args]
+  SLS_ARGS:
+    ServerlessFramework の引数やオプションを指定します。
 
 [options]
  -h | --help:
@@ -17,9 +21,9 @@ slsコマンドを扱うラッパー
 
 [example]
  デプロイ
-  $0 -- deploy --param="s3Bucket=xxxxxxxxxxxxx" --param="imageArn=xxxxxxxxxxxxx.dkr.ecr.ap-northeast-1.amazonaws.com/xxxxxxxxx:tag"
+  $0 --profile default -- deploy --param="s3Bucket=xxxxxxxxxxxxx" --param="imageUri=xxxxxxxxxxxxx.dkr.ecr.ap-northeast-1.amazonaws.com/xxxxxxxxx:tag"
  削除
-  $0 -- remove
+  $0 --profile default -- remove --param="s3Bucket=xxxxxxxxxxxxx" --param="imageUri=xxxxxxxxxxxxx.dkr.ecr.ap-northeast-1.amazonaws.com/xxxxxxxxx:tag"
 EOS
 exit 1
 }

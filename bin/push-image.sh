@@ -8,7 +8,8 @@ dockerイメージをbuildしてpushするコマンド
  $0 <ECR_NAME> [options]
 
 [args]
- ECR_NAME: リポジトリ名 (ex. synonym/model)
+ ECR_NAME:
+   リポジトリ名 (ex. synonym/model)
 
 [options]
  -h | --help:
