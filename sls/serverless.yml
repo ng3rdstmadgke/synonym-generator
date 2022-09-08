@@ -3,8 +3,8 @@ frameworkVersion: '3'
 
 # Serverless Parameters: https://www.serverless.com/framework/docs/guides/parameters
 custom:
-  s3Bucket: ${param:s3Bucket}
-  imageUri: ${param:imageUri}
+  s3Bucket: ${param:s3Bucket, "dummy"}
+  imageUri: ${param:imageUri, "dummy"}
 
 provider:
   name: aws

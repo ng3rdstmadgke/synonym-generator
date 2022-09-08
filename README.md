@@ -101,7 +101,7 @@ KEYWORD="Windows"
 
 ```bash
 # StepFunctionsを削除する
-./bin/sls.sh --profile default -- remove --param="s3Bucket=${S3_BUCKET_NAME}" --param="imageUri=${ECR_REPO_ARN}"
+./bin/sls.sh --profile default -- remove
 
 # ECRの削除
 aws --profile default ecr delete-repository --repository-name "${ECR_NAME}" --force
