@@ -30,6 +30,17 @@ functions:
         - '!**'
         - 'src/__init__.py'
         - 'src/check_endpoint/**'
+  modelTest:
+    handler: src.model_test.main.handler
+    role: ModelTestFunctionRole
+    runtime: python3.8
+    memorySize: 256
+    timeout: 600
+    package:
+      patterns:
+        - '!**'
+        - 'src/__init__.py'
+        - 'src/model_test/**'
 
 # Serverless Step Functions: https://www.serverless.com/plugins/serverless-step-functions
 stepFunctions:
@@ -119,15 +130,33 @@ stepFunctions:
             ResultPath: $.endpoint_result
             Type: Task
           Check Endpoint Status InService:
-            End: true
+            Next: Model Test
             HeartbeatSeconds: 60
             Parameters:
               FunctionName:
-                Fn::GetAtt: [checkEndpoingInService, Arn] 
+                Fn::GetAtt: [checkEndpoingInService, Arn]
               Payload:
                 EndpointName.$: States.Format('synonym-{}', $$.Execution.Name)
             Resource: arn:aws:states:::lambda:invoke
             ResultPath: $.check_endpoint_status_result
+            Retry:
+            - BackoffRate: 1
+              ErrorEquals:
+              - States.ALL
+              IntervalSeconds: 10
+              MaxAttempts: 2
+            TimeoutSeconds: 600
+            Type: Task
+          Model Test:
+            End: true
+            HeartbeatSeconds: 60
+            Parameters:
+              FunctionName:
+                Fn::GetAtt: [modelTest, Arn]
+              Payload:
+                EndpointName.$: States.Format('synonym-{}', $$.Execution.Name)
+            Resource: arn:aws:states:::lambda:invoke
+            ResultPath: $.model_test_result
             Retry:
             - BackoffRate: 1
               ErrorEquals:
@@ -208,7 +237,24 @@ resources:
                 Service:
                   - lambda.amazonaws.com
         ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole 
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+          - arn:aws:iam::aws:policy/PowerUserAccess
+
+    ModelTestFunctionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ModelTestFunctionRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - sts:AssumeRole
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
           - arn:aws:iam::aws:policy/PowerUserAccess
 
 plugins:

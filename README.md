@@ -118,6 +118,5 @@ aws --profile default s3 rb "s3://${S3_BUCKET_NAME}" --force
 - CodePipelineでStepFunctionsを発火
 - S3の学習データ更新でStepFunctionsを発火
 - ALBを利用したデプロイ戦略
-- Lambdaによるテスト
 - 実験アーティファクト管理
 - ハイパーパラメータ設定
