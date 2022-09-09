@@ -63,5 +63,6 @@ invoke docker run \
   -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
   -v ${PROJECT_ROOT}/sls/src:/opt/sls/src \
   -v ${PROJECT_ROOT}/sls/serverless.yml:/opt/sls/serverless.yml \
+  -v /root/.cache:/root/.cache \
   -v /var/run/docker.sock:/var/run/docker.sock \
   ${APP_NAME}/sls:latest sls ${args[@]} --region $AWS_REGION
