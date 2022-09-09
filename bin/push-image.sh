@@ -50,7 +50,7 @@ set -e
 AWS_ACCOUNT=$(aws sts get-caller-identity --profile ${AWS_PROFILE} --output text --query "Account")
 aws ecr get-login-password --region $AWS_REGION --profile ${AWS_PROFILE} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-ECR_URI=$(aws ecr describe-repositories --repository-name "${ECR_NAME}" --output text --query 'repositories[0].repositoryUri')
+ECR_URI=$(aws ecr describe-repositories --profile ${AWS_PROFILE} --repository-name "${ECR_NAME}" --output text --query 'repositories[0].repositoryUri')
 
 $SCRIPT_DIR/build.sh
 invoke docker tag ${APP_NAME}/model:latest ${ECR_URI}:latest
